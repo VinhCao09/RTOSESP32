@@ -42,6 +42,49 @@ Nếu cấp phát stack quá nhỏ, bạn có thể gặp lỗi stack overflow. 
 Task có độ ưu tiên cao hơn (giá trị lớn hơn) sẽ được CPU ưu tiên thực hiện trước.
 configMAX_PRIORITIES (thường là 25) định nghĩa độ ưu tiên tối đa mà bạn có thể sử dụng.
 
+*Hàm vTaskDelay() trong FreeRTOS được sử dụng để trì hoãn (delay) một task trong một khoảng thời gian cụ thể. Khi một task gọi vTaskDelay(), nó sẽ nhường CPU cho các task khác và chuyển sang trạng thái blocked trong khoảng thời gian đã định.*
+```bash
+void vTaskDelay( const TickType_t xTicksToDelay );
+```
+xTicksToDelay:
+Số tick thời gian mà task sẽ bị trì hoãn.
+Một "tick" là đơn vị thời gian do configTICK_RATE_HZ định nghĩa trong file cấu hình FreeRTOS (FreeRTOSConfig.h).
+Ví dụ:
+Nếu configTICK_RATE_HZ = 1000, một tick tương đương 1ms.
+Nếu configTICK_RATE_HZ = 100, một tick tương đương 10ms.
+
+```bash
+void Task1(void *pvParameters) {
+    for (;;) {
+        printf("Task 1 is running\n");
+        vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay 1000ms
+    }
+}
+```
+vTaskDelay(1000 / portTICK_PERIOD_MS) sẽ trì hoãn task trong 1000ms (1 giây).
+portTICK_PERIOD_MS là macro tính khoảng thời gian 1 tick bằng mili giây, thường là (1000 / configTICK_RATE_HZ).
+
+*Tại sao không dùng delay mà dùng vTaskDelay?*
+Khi bạn sử dụng delay(ms), CPU sẽ bận rộn chờ đợi (busy-wait) trong khoảng thời gian đó. Nó không thực hiện bất kỳ công việc nào khác ngoài việc đếm thời gian.
+Điều này dẫn đến lãng phí tài nguyên, đặc biệt là trong hệ thống đa nhiệm như FreeRTOS, nơi các task khác có thể sử dụng CPU trong thời gian chờ.
+```bash
+void Task1() {
+    for (;;) {
+        printf("Task 1 is running\n");
+        delay(1000); // CPU bị "đóng băng" trong 1 giây.
+    }
+}
+
+```
+
+vTaskDelay() giúp chia sẻ CPU
+FreeRTOS là một hệ điều hành thời gian thực hỗ trợ đa nhiệm, vì vậy việc chia sẻ CPU giữa các task là rất quan trọng.
+Khi gọi vTaskDelay(), task sẽ nhường CPU cho các task khác trong thời gian trì hoãn.
+
+*Tóm lại*
+delay(): Chặn toàn bộ hệ thống, không chia sẻ CPU.
+vTaskDelay(): Nhường CPU, giúp các task khác hoạt động trong thời gian chờ, tận dụng hiệu quả tài nguyên trong hệ thống FreeRTOS.
+Vì vậy, trong FreeRTOS, vTaskDelay() luôn là lựa chọn tốt hơn.
 
 ## 🚀 About Me
 Hello 👋I am Vinh. I'm studying HCMC University of Technology and Education
